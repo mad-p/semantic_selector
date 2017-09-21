@@ -10,28 +10,22 @@ export BATCH_SIZE=200
 for layers in 0 1 2 3 4 5; do
   case $layers in
     0)
-      export N_UNITS_1=100
-      export N_UNITS_2=30
+      export N_UNITS_1=30
       ;;
     1)
-      export N_UNITS_1=200
-      export N_UNITS_2=50
+      export N_UNITS_1=50
       ;;
     2)
-      export N_UNITS_1=300
-      export N_UNITS_2=100
+      export N_UNITS_1=100
       ;;
     3)
-      export N_UNITS_1=500
-      export N_UNITS_2=200
+      export N_UNITS_1=200
       ;;
     4)
-      export N_UNITS_1=1000
-      export N_UNITS_2=500
+      export N_UNITS_1=500
       ;;
     5)
       export N_UNITS_1=1000
-      export N_UNITS_2=1000
       ;;
   esac
 
@@ -49,7 +43,7 @@ for layers in 0 1 2 3 4 5; do
         1) nl=relu_;;
       esac
 
-      stem=${dr}${nl}${N_UNITS_1}_${N_UNITS_2}
+      stem=${dr}${nl}${N_UNITS_1}
       echo $stem
       if [ -f result/accuracy_${stem}.png ]; then
         :

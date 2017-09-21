@@ -25,16 +25,14 @@ from chainer.datasets import tuple_dataset
 BATCH_SIZE = int(os.getenv('BATCH_SIZE', '200'))
 N_EPOCH    = int(os.getenv('N_EPOCH',    '100'))
 N_UNITS_1  = int(os.getenv('N_UNITS_1',  '800'))
-N_UNITS_2  = int(os.getenv('N_UNITS_2',  '200'))
 DROPOUT    = int(os.getenv('DROPOUT',    '1'))
 RELU       = int(os.getenv('RELU',       '1'))
 
 class Model(Chain):
-    def __init__(self, in_units, out_units, n_units_1 = N_UNITS_1, n_units_2 = N_UNITS_2):
+    def __init__(self, in_units, out_units, n_units_1 = N_UNITS_1):
         super(Model, self).__init__(
             l1=L.Linear(in_units, n_units_1),
-            l2=L.Linear(n_units_1, n_units_2),
-            l3=L.Linear(n_units_2, out_units),
+            l2=L.Linear(n_units_1, out_units),
             )
         self.dropout = DROPOUT
         self.relu    = RELU
@@ -50,17 +48,7 @@ class Model(Chain):
         if self.dropout == 1:
             h1 = F.dropout(h1, 0.5)
 
-        h2 = self.l2(h1)
-
-        if self.relu == 1:
-            h2 = F.relu(h2)
-        else:
-            h2 = F.sigmoid(h2)
-
-        if self.dropout == 1:
-            h2 = F.dropout(h2, 0.5)
-
-        return self.l3(h2)
+        return self.l2(h1)
 
 class ChainerModel(object):
 
@@ -78,7 +66,7 @@ class ChainerModel(object):
             self.__save_model()
 
     def describe(self):
-        return "Layer 1: %d, Layer 2: %d, Generations: %d, Batch size: %d" % (N_UNITS_1, N_UNITS_2, N_EPOCH, BATCH_SIZE)
+        return "Layer 1: %d, Generations: %d, Batch size: %d" % (N_UNITS_1, N_EPOCH, BATCH_SIZE)
 
     def __prepare_data(self):
         dictionary = corpora.Dictionary(self.word_vecs)
@@ -101,8 +89,8 @@ class ChainerModel(object):
         if len(self.tests) > 0:
             self.tests = self.__convert_tests(self.tests)
 
-    def __prepare_model(self, n_units_1 = N_UNITS_1, n_units_2 = N_UNITS_2):
-        self.model = Model(self.in_units, self.out_units, n_units_1, n_units_2)
+    def __prepare_model(self, n_units_1 = N_UNITS_1):
+        self.model = Model(self.in_units, self.out_units, n_units_1)
         self.classifier = L.Classifier(self.model)
 
     def __train_model(self):
@@ -136,7 +124,7 @@ class ChainerModel(object):
 
         trainer.run()
 
-        stem = '%s%d_%d.png' % (self.myname(), N_UNITS_1, N_UNITS_2)
+        stem = '%s%d.png' % (self.myname(), N_UNITS_1)
         shutil.move('result/loss.png', 'result/loss_%s' % stem)
         shutil.move('result/accuracy.png', 'result/accuracy_%s' % stem)
 
@@ -161,7 +149,6 @@ class ChainerModel(object):
             self.out_units,
             self.label_types,
             N_UNITS_1,
-            N_UNITS_2,
             self.classifier.predictor.dropout,
             self.classifier.predictor.relu,
         ], f)
@@ -171,9 +158,9 @@ class ChainerModel(object):
     def __load_model(self, filename):
         print('load the model')
         f = open(filename + '.meta', 'rb')
-        self.dictionary, self.n, self.in_units, self.out_units, self.label_types, n_units_1, n_units_2, dropout, relu = pickle.load(f)
+        self.dictionary, self.n, self.in_units, self.out_units, self.label_types, n_units_1, dropout, relu = pickle.load(f)
         f.close
-        self.__prepare_model(n_units_1, n_units_2)
+        self.__prepare_model(n_units_1)
         self.classifier.predictor.dropout = dropout
         self.classifier.predictor.relu    = relu
         chainer.serializers.load_hdf5(filename + '.hdf5', self.classifier)
